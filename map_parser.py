@@ -1,5 +1,5 @@
 from typing import Dict, Any, List, Optional, Tuple
-from models import Zone, Connection, ZoneType
+from models import Graph, Zone, Connection, ZoneType
 
 
 class MapParser:
@@ -10,8 +10,16 @@ class MapParser:
         self.num_drones: Optional[int] = 0
         self.start_zone: Optional[Zone] = None
         self.end_zone: Optional[Zone] = None
+        self.parse_map()
+        self.graph = Graph(
+            self.start_zone,
+            self.end_zone,
+            self.num_drones,
+            self.zones,
+            self.connections
+        )
 
-    def parse_map(self) -> Dict[str, Any]:
+    def parse_map(self) -> Optional[Graph]:
         try:
             with open(self.map_file, 'r') as file:
                 for n, line in enumerate(file, 1):
@@ -36,17 +44,11 @@ class MapParser:
                         or conn.zone2 not in self.zones):
                     raise ValueError(f"Connection {conn.zone1}-{conn.zone2}"
                                      "references unknown zone")
-            return {
-                "num_drones": self.num_drones,
-                "zones": self.zones,
-                "connections": self.connections,
-                "start_zone": self.start_zone,
-                "end_zone": self.end_zone
-                }
+            return self.graph
         except Exception as e:
             print(f"Error parsing line {n}: {line}")
             print(f"Details: {e}")
-            return {}
+            return None
 
     def _parse_line(self, line: str) -> None:
         if ':' not in line:
@@ -174,5 +176,4 @@ class MapParser:
             else:
                 raise ValueError("Metadata must be enclosed in [metadata]")
         connection = Connection(zone1, zone2, max_capacity)
-        connection.key = edge
         self.connections.append(connection)
