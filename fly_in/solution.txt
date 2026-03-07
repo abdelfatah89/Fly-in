@@ -1,0 +1,7 @@
+D0-fast_junction
+D0-fast_path D1-fast_junction
+D0-merge_point D1-fast_path D2-fast_junction
+D0-goal D1-merge_point D2-fast_path D3-fast_junction
+D1-goal D2-merge_point D3-fast_path
+D2-goal D3-merge_point
+D3-goal
