@@ -16,20 +16,20 @@ class Connection:
 
     # Get the other zone connected to this connection
     def get_other_zone(self, zone_name: str) -> str:
-        if zone_name == self.zone1.name:
+        if zone_name == self.zone1:
             return self.zone2
-        elif zone_name == self.zone2.name:
+        elif zone_name == self.zone2:
             return self.zone1
         else:
             print(
                 f"Zone '{zone_name}' is not part of connection "
-                f"{self.zone1_name}-{self.zone2_name}"
+                f"{self.zone1}-{self.zone2}"
                 )
             return False
 
     # Get the zones connected to this connection
     def get_zones(self) -> Tuple[str, str]:
-        return (self.zone1_name, self.zone2_name)
+        return (self.zone1, self.zone2)
 
     # Check if there is capacity left on this connection
     @property
@@ -40,7 +40,7 @@ class Connection:
     def use_capacity(self) -> bool:
         if not self.has_capacity:
             return False
-        self.current_usage -= 1
+        self.current_usage += 1
         return True
 
     # Reset the usage of this connection

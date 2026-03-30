@@ -11,7 +11,7 @@ class DroneStatus(Enum):
 
 
 class Drone:
-    def __init__(self, drone_id: str, current_zone: Optional[Zone]):
+    def __init__(self, drone_id: int, current_zone: str):
         self.drone_id = drone_id
         self.current_zone = current_zone
         self.status = DroneStatus.WAITING
@@ -38,20 +38,19 @@ class Drone:
         self.transit_turns_remaining = turns
 
     # Complete a move
-    def complete_move(self, new_zone: str) -> None:
-        if self.transit_destination is None:
-            raise ValueError("No transit destination set")
+    def complete_move(self, new_zone) -> None:
         self.current_zone = new_zone
         self.status = DroneStatus.WAITING
         self.target_zone = None
         self.transit_turns_remaining = 0
+        self.transit_destination = None
 
     # Progress the transit
     def progress_transit(self) -> None:
         if self.transit_turns_remaining > 0:
             self.transit_turns_remaining -= 1
         if self.transit_turns_remaining == 0:
-            self.complete_move()
+            self.complete_move(self.transit_destination)
 
     # Mark the drone as delivered
     def mark_delivered(self) -> None:

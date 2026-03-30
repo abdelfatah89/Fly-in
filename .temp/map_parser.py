@@ -18,7 +18,7 @@ class Graph:
         self.start_zone = start_zone
         self.end_zone = end_zone
         self.drones: List[Drone] = [
-            Drone(i, start_zone) for i in range(num_drones)
+            Drone(i, start_zone.name) for i in range(num_drones)
         ]
 
     # Get the cost of a zone
@@ -54,9 +54,9 @@ class Graph:
 
     # Check if two zones are connected
     def has_connection(self, zone1: Zone, zone2: Zone) -> bool:
-        z_neighbors = self.get_neighbors(zone1)
-        if zone2 in z_neighbors:
-            return True
+        for neighbor, _ in self.get_neighbors(zone1):
+            if neighbor == zone2:
+                return True
         return False
 
 
@@ -76,6 +76,9 @@ class MapParser:
             self.zones,
             self.connections
         )
+        # Initialize start zone occupancy
+        for drone in self.graph.drones:
+            self.start_zone.add_drone()
 
     # Parse the map file
     def parse_map(self) -> None:
@@ -158,9 +161,6 @@ class MapParser:
             y = int(parts[2])
         except ValueError:
             raise ValueError("Coordinates must be integers")
-        # Zone coordinates must be non-negative
-        if x < 0 or y < 0:
-            raise ValueError("Coordinates must be non-negative")
         # Zone metadata is optional
         if len(parts) > 3:
             metadata = ' '.join(parts[3:])
@@ -191,8 +191,15 @@ class MapParser:
                         raise ValueError(f"Unknown metadata key: {meta_key}")
             else:
                 raise ValueError("Metadata must be enclosed in [metadata]")
+        
+        # Set zone type based on key if not already set by metadata
+        if key == 'start_hub':
+            zone_type = ZoneType.START
+        elif key == 'end_hub':
+            zone_type = ZoneType.END
+        
         # Create the zone and add it to the graph
-        zone = Zone(name, x, y, color, zone_type, max_drones)
+        zone = Zone(name, x, y, zone_type, color, max_drones)
         self.zones[name] = zone
         # Set the start and end zones
         if key == 'start_hub':
@@ -227,14 +234,9 @@ class MapParser:
             raise ValueError(f"Duplicate connection between {zone1}-{zone2}")
 
         max_capacity = 1
-        if len(parts) > 1:
-            raise ValueError(
-                "Connection definition must have at least two zones")
-        if zone1 == zone2:
-            raise ValueError("Connection cannot be between the same zone")
         # Parse connection metadata
-        if len(parts) > 2:
-            metadata = ' '.join(parts[2:])
+        if len(parts) > 1:
+            metadata = ' '.join(parts[1:])
             if metadata.startswith('[') and metadata.endswith(']'):
                 metadata = metadata[1:-1]
                 if '=' not in metadata:
