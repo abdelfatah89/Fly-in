@@ -1,11 +1,11 @@
 from map_parser import MapParser
-from simulator import Simulator
+from simulator import DynamicSimulator
 from renderer import Renderer
 
 def main():
     map_parser = MapParser("map.txt")
     graph = map_parser.graph
-    simulator = Simulator(graph)
+    simulator = DynamicSimulator(graph)
     renderer = Renderer(graph, simulator)
     renderer.run()
     print(f"Map loaded: {len(graph.zones)} zones, {len(graph.drones)} drones")
