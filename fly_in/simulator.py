@@ -31,10 +31,10 @@ class Simulator:
         self.current_turn: int = 0
         # Output lines (one bu turn)
         self.output_lines: List[str] = []
-        # initialisation of paths
+        # initialization of paths
         self.init_paths()
 
-    # Initialisation of paths for all drones
+    # Initialization of paths for all drones
     def init_paths(self) -> None:
         start = self.graph.start_zone
         goal = self.graph.end_zone
@@ -43,7 +43,7 @@ class Simulator:
         if start is None or goal is None:
             raise ValueError("Start or goal zone not defined")
 
-        # Find path (all drones have some path)
+        # ...
         path = self.path_finder.find_path(start.name, goal.name)
         if path is None:
             raise ValueError(f"No path exists from {start.name} to {goal.name}")
@@ -98,12 +98,12 @@ class Simulator:
                     zone = self.graph.zones[drone.current_zone]
                     zone.add_drone()
 
-    # Collect move intentions from all waitting drones
+    # Collect move intentions from all witting drones
     def collect_move_intentions(self) -> List[MovePlan]:
-        """Collect move intentions from all waitting drones."""
+        """Collect move intentions from all witting drones."""
         plans: List[MovePlan] = []
         for drone in self.graph.drones:
-            # Skip if not in waitting status
+            # Skip if not in witting status
             if not drone.can_move():
                 continue
             # Skip if already at Goal zone
@@ -163,7 +163,7 @@ class Simulator:
             connection_usage: Dict[Tuple[str, str], int]
     ) -> bool:
         """Check if a movement plan can be applied."""
-        # Get to_zone and check future capacity if it not begger then max capacity of zone
+        # Get to_zone and check future capacity if it not bigger then max capacity of zone
         to_zone = plan.to_zone
         
         # Count drones already IN_TRANSIT to this zone (critical for restricted zones)
@@ -174,12 +174,12 @@ class Simulator:
         if not to_zone.is_unlimited_capacity:
             if future_occupancy >= to_zone.max_capacity:
                 return False
-        # Get connection between fron/to zone and check if it exict or not
+        # Get connection between from/to zone and check if it exist or not
         connection = self.graph.get_connection(plan.from_zone, plan.to_zone.name)
         if connection is None:
             return False
 
-        # calcule future usage and check if it not begger then max capacity of connection
+        # calculate future usage and check if it not bigger then max capacity of connection
         conn_key = tuple(sorted([plan.from_zone, plan.to_zone.name]))
         future_conn_usage = connection.current_usage + connection_usage.get(conn_key, 0)
         if future_conn_usage >= connection.max_capacity:

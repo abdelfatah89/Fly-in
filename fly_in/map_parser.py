@@ -82,6 +82,7 @@ class MapParser:
 
     # Parse the map file
     def parse_map(self) -> None:
+        n = 0
         try:
             with open(self.map_file, 'r') as file:
                 for n, line in enumerate(file, 1):

@@ -15,7 +15,7 @@ class Connection:
         return zone_name in (self.zone1, self.zone2)
 
     # Get the other zone connected to this connection
-    def get_other_zone(self, zone_name: str) -> str:
+    def get_other_zone(self, zone_name: str) -> Optional[str]:
         if zone_name == self.zone1:
             return self.zone2
         elif zone_name == self.zone2:
@@ -25,7 +25,7 @@ class Connection:
                 f"Zone '{zone_name}' is not part of connection "
                 f"{self.zone1}-{self.zone2}"
                 )
-            return False
+            return None
 
     # Get the zones connected to this connection
     def get_zones(self) -> Tuple[str, str]:

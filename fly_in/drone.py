@@ -28,7 +28,7 @@ class Drone:
         return self.status == DroneStatus.REACHED
 
     # Check if the drone can move
-    def can_move(self):
+    def can_move(self) -> bool:
         return self.status == DroneStatus.WAITING
 
     # Start a restricted transit
