@@ -1,7 +1,8 @@
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 from zone import Zone, ZoneType
 from drone import Drone
 from connection import Connection
+
 
 class Graph:
     def __init__(self,
@@ -192,13 +193,13 @@ class MapParser:
                         raise ValueError(f"Unknown metadata key: {meta_key}")
             else:
                 raise ValueError("Metadata must be enclosed in [metadata]")
-        
+
         # Set zone type based on key if not already set by metadata
         if key == 'start_hub':
             zone_type = ZoneType.START
         elif key == 'end_hub':
             zone_type = ZoneType.END
-        
+
         # Create the zone and add it to the graph
         zone = Zone(name, x, y, zone_type, color, max_drones)
         self.zones[name] = zone

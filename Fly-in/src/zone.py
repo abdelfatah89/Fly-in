@@ -7,63 +7,52 @@ class ZoneType(Enum):
     PRIORITY = "priority"       # Cost: 1 turn (preferred in pathfinding)
     BLOCKED = "blocked"         # Cannot be entered
     START = "start"             # Starting zone (unlimited capacity)
-    END = "end" 
+    END = "end"                 # Ending zone (unlimited capacity)
 
 
 class Zone:
     def __init__(self,
-                 name: str, x: float, y: float,
+                 name: str,
+                 x: int,
+                 y: int,
                  zone_type: ZoneType,
                  color: str = 'none',
                  max_capacity: int = 1
                  ) -> None:
-
+        # ----------Initialization---------- #
         self.name = name
         self.x = x
         self.y = y
-        self.zone_type: ZoneType = zone_type
-        self.max_capacity: int = max_capacity
-        self.color: str = color
+        self.zone_type = zone_type
+        self.color = color
+        self.max_capacity = max_capacity
         self.current_occupancy: int = 0
 
     @property
     def movement_cost(self) -> int:
-        """Return movement cost at this zone."""
         if self.zone_type == ZoneType.RESTRICTED:
             return 2
         return 1
 
     @property
     def is_blocked(self) -> bool:
-        """Check if this zone blocked or not."""
         return self.zone_type == ZoneType.BLOCKED
 
     @property
-    def is_unlimited_capacity(self) -> bool:
-        """Check if this zone is Start or Goal zone."""
-        return self.zone_type in (ZoneType.START, ZoneType.END)
-
-    @property
-    def has_space(self) -> bool:
-        """Check if current occupancy reach max capacity or not yet"""
-        if self.is_unlimited_capacity:
-            return True
+    def has_space(self):
         return self.current_occupancy < self.max_capacity
 
     def add_drone(self) -> bool:
-        """Add drone to zone, increase drone counter"""
         if not self.has_space:
             return False
         self.current_occupancy += 1
         return True
 
     def remove_drone(self) -> bool:
-        """Remove drone to zone, decrease drone counter"""
         if self.current_occupancy <= 0:
             return False
         self.current_occupancy -= 1
         return True
 
-    def reset_occupancy(self) -> None:
-        """reset drone counter"""
+    def reset_occupancy(self):
         self.current_occupancy = 0
