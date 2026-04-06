@@ -6,12 +6,12 @@ class Connection:
     def __init__(self,
                  zone1: str,
                  zone2: str,
-                 max_capacity: int
+                 max_link_capacity: int
                  ) -> None:
         # ------- init -------- #
         self.zone1 = zone1
         self.zone2 = zone2
-        self.max_capacity = max_capacity
+        self.max_link_capacity = max_link_capacity
         self.name = f"{self.zone1}-{self.zone2}"
         self.current_usage: int = 0
         self._key: Optional[Tuple[str, str]] = None
@@ -32,7 +32,7 @@ class Connection:
 
     @property
     def has_capacity(self) -> bool:
-        return self.current_usage < self.max_capacity
+        return self.current_usage < self.max_link_capacity
 
     def use_capacity(self) -> bool:
         if not self.has_capacity:
@@ -43,7 +43,8 @@ class Connection:
     def reset_usage(self) -> None:
         self.current_usage = 0
 
-    def key(self) -> Optional[Tuple[str, str]]:
+    @property
+    def key(self) -> Tuple[str, str]:
         if self._key is None:
             sorted_zones = sorted([self.zone1, self.zone2])
             self._key = (sorted_zones[0], sorted_zones[1])

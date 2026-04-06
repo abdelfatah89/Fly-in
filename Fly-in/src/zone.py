@@ -6,8 +6,6 @@ class ZoneType(Enum):
     RESTRICTED = "restricted"   # Cost: 2 turns (drone in transit)
     PRIORITY = "priority"       # Cost: 1 turn (preferred in pathfinding)
     BLOCKED = "blocked"         # Cannot be entered
-    START = "start"             # Starting zone (unlimited capacity)
-    END = "end"                 # Ending zone (unlimited capacity)
 
 
 class Zone:
@@ -39,7 +37,7 @@ class Zone:
         return self.zone_type == ZoneType.BLOCKED
 
     @property
-    def has_space(self):
+    def has_space(self) -> bool:
         return self.current_occupancy < self.max_capacity
 
     def add_drone(self) -> bool:
@@ -54,5 +52,5 @@ class Zone:
         self.current_occupancy -= 1
         return True
 
-    def reset_occupancy(self):
+    def reset_occupancy(self) -> None:
         self.current_occupancy = 0

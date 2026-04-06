@@ -1,3 +1,4 @@
+from typing import List
 from enum import Enum
 from typing import Optional
 from .zone import Zone
@@ -20,6 +21,12 @@ class Drone:
         self.drone_status = DroneStatus.WAITING
         self.target_zone: Optional[Zone] = None
 
+        # ----- Rerouting -----
+        self.path: List[Zone] = []
+        self.path_index: int = 0
+        self.wait_turns: int = 0
+        self.turns_remaining: int = 0
+
     @property
     def is_reached(self) -> bool:
         return self.drone_status == DroneStatus.REACHED
@@ -28,8 +35,9 @@ class Drone:
     def can_move(self) -> bool:
         return self.drone_status == DroneStatus.WAITING
 
-    def start_restricted_transit(self) -> None:
+    def start_restricted_transit(self, target: Zone) -> None:
         self.drone_status = DroneStatus.IN_TRANSIT
+        self.target_zone = target
         self.turns_remaining = 2
 
     def complete_move(self, next_zone: Zone) -> None:

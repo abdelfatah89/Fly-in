@@ -57,7 +57,7 @@ class Dijkstra:
                 # Get the neighbor zone
                 neighbor_zone = neighbor[0]
                 neighbor_name = neighbor_zone.name
-                
+
                 # Skip if the neighbor has already been visited
                 if neighbor_name in visited:
                     continue

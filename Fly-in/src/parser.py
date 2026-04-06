@@ -8,34 +8,41 @@ class ParserError(Exception):
 
 
 class Parser:
-    def __init__(self, map: str) -> None:
+    def __init__(self) -> None:
         self.data_parsed: Dict[str, Any] = {
             "nb_drones": None,
             "start_hub": None,
             "end_hub": None,
-            "zones": [],
+            "zones": {},
             "connections": []
         }
-        self._parse(file=map)
 
-    def _parse(self, file: str) -> Optional[Dict[str, Any]]:
+    def parse(self, file: str) -> Optional[Dict[str, Any]]:
         n, line = 0, "Error at Begin"
+        first_data_line_seen = False
+
         try:
-            with open(file, 'r'):
-                for n, line in enumerate(file, 1):
+            with open(file, 'r') as f:
+                for n, line in enumerate(f, 1):
                     line = line.strip()
                     if not line or line.startswith('#'):
                         continue
-                    self._parse_line(n, line)
+
+                    if not first_data_line_seen:
+                        if not line.startswith("nb_drones:"):
+                            raise ParserError(
+                                "First data line must define nb_drones")
+                        first_data_line_seen = True
+
+                    self._parse_line(line)
             self._data_checker()
             return self.data_parsed
         except Exception as e:
             print(f"Error parsing line {n}: {line}")
             print(f"Details: {e}")
-            exit(1)
             return None
 
-    def _parse_line(self, n_line: int, line: str) -> None:
+    def _parse_line(self, line: str) -> None:
         if ':' not in line:
             raise ParserError(
                 "Line must contain a key and value separated by ':'")
@@ -54,16 +61,16 @@ class Parser:
         else:
             raise ParserError(f"Unknown Key: {key}")
 
-    def _parse_nb_drones(self, value: str):
+    def _parse_nb_drones(self, value: str) -> None:
         if not value.isdigit() or int(value) <= 0:
             raise ValueError("nb_drones must be a positive integer")
-        self.num_drones = int(value)
+        self.data_parsed["nb_drones"] = int(value)
 
     def _parse_zone(self, key: str, value: str) -> None:
         zone_info: Dict[str, Any] = {
             "zone_type": ZoneType.NORMAL,
             "color": "none",
-            "max_drones": 1
+            "max_capacity": 1
         }
         info = value.split()
         if len(info) < 3:
@@ -75,6 +82,7 @@ class Parser:
                               "cannot contain dash or space")
         if zone_name in self.data_parsed["zones"]:
             raise ParserError(f"Duplicate zone name: {zone_name}")
+        zone_info["name"] = zone_name
         try:
             x = int(info[1])
             y = int(info[2])
@@ -84,11 +92,11 @@ class Parser:
             raise ParserError("Coordinates must be integers")
 
         if len(info) > 3:
-            metadata = ' '.join(info[3:0])
+            metadata = ' '.join(info[3:])
             if not metadata.startswith('[') or not metadata.endswith(']'):
                 raise ParserError("Metadata must be enclosed in [metadata]")
-            metadata = metadata[1:1]
-            for data in metadata:
+            metadata = metadata[1:-1]
+            for data in metadata.split():
                 if '=' not in data:
                     raise ParserError("Metadata must be in key=value format")
                 data_key, data_value = data.split('=', 1)
@@ -105,17 +113,12 @@ class Parser:
                     if not data_value.isdigit() or int(data_value) <= 0:
                         raise ParserError(
                             "max_drones must be a positive integer")
-                    zone_info["max_drones"] = int(data_value)
+                    zone_info["max_capacity"] = int(data_value)
                 else:
                     raise ParserError(f"Unknown metadata key: {data_key}")
 
-        if key == 'start_hub':
-            zone_info["zone_type"] = ZoneType.START
-        elif key == 'end_hub':
-            zone_info["zone_type"] = ZoneType.END
-
         zone = Zone(**zone_info)
-        self.data_parsed["zones"].append(zone)
+        self.data_parsed["zones"][zone.name] = zone
         if key == 'start_hub':
             if self.data_parsed["start_hub"] is not None:
                 raise ParserError("Multiple start_hub definitions found")
@@ -153,7 +156,7 @@ class Parser:
             metadata = ' '.join(info[1:])
             if not metadata.startswith('[') or not metadata.endswith(']'):
                 raise ParserError("Metadata must be enclosed in [metadata]")
-            metadata = metadata[1:1]
+            metadata = metadata[1:-1]
             if '=' not in metadata:
                 raise ParserError("Metadata must be in key=value format")
             data_key, data_value = metadata.split('=', 1)
