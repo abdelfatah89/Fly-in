@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Set
+from typing import List, Optional, Dict, Set, Tuple
 from heapq import heappop, heappush
 from .graph import Graph
 from .zone import Zone
@@ -12,7 +12,12 @@ class Dijkstra:
     def __init__(self, graph: Graph) -> None:
         self.graph = graph
 
-    def find_path(self, start: Zone, goal: Zone) -> List[Zone]:
+    def find_path(self,
+                  start: Zone,
+                  goal: Zone,
+                  forbidden_zones: Optional[Set[str]] = None,
+                  forbidden_connections: Optional[Set[Tuple[str, str]]] = None
+                  ) -> List[Zone]:
         if start.name == goal.name:
             return [start]
 
@@ -30,7 +35,7 @@ class Dijkstra:
                 continue
             visited.add(current_zone_name)
 
-            if current_zone_name == goal:
+            if current_zone_name == goal.name:
                 return self.get_path(start, goal, way_back)
 
             current_zone = self.graph.zones[current_zone_name]
@@ -39,6 +44,11 @@ class Dijkstra:
                 if neighbor_zone.name in visited:
                     continue
                 if neighbor_zone.is_blocked:
+                    continue
+                if forbidden_zones and neighbor_zone.name in forbidden_zones:
+                    continue
+                if (forbidden_connections
+                        and _connection.key in forbidden_connections):
                     continue
 
                 neighbor_dist = self.graph.get_zone_cost(neighbor_zone)

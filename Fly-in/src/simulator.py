@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Tuple
+from typing import List, Optional, Dict, Tuple, Set
 from .path_finding import Dijkstra
 from .graph import Graph
 from .drone import Drone, DroneStatus
@@ -26,6 +26,44 @@ class Simulator:
         self.path_finder = Dijkstra(graph)
         self.current_turn: int = 0
         self.output_lines: List[str] = []
+        self._assign_initial_paths()
+
+    @staticmethod
+    def _path_transit_time(path: List[Zone]) -> int:
+        return sum(2 if z.zone_type == ZoneType.RESTRICTED else 1
+                   for z in path[1:])
+
+    def _compute_diverse_paths(self, k: int = 5) -> List[List[Zone]]:
+        paths: List[List[Zone]] = []
+        forbidden: Set[str] = set()
+        start = self.graph.start_hub
+        goal = self.graph.end_hub
+        for _ in range(k):
+            path = self.path_finder.find_path(
+                start, goal,
+                forbidden_zones=forbidden if forbidden else None)
+            if not path or len(path) < 2:
+                break
+            paths.append(path)
+            prev_size = len(forbidden)
+            for z in path[1:-1]:
+                if z.zone_type == ZoneType.RESTRICTED and z.max_capacity <= 1:
+                    forbidden.add(z.name)
+            if len(forbidden) == prev_size:
+                break
+        if len(paths) > 1:
+            times = [self._path_transit_time(p) for p in paths]
+            min_time = min(times)
+            paths = [p for p, t in zip(paths, times) if t <= min_time + 1]
+        return paths
+
+    def _assign_initial_paths(self) -> None:
+        paths = self._compute_diverse_paths()
+        if not paths:
+            return
+        for i, drone in enumerate(self.graph.drones):
+            drone.path = list(paths[i % len(paths)])
+            drone.path_index = 0
 
     def all_delivered(self) -> bool:
         goal_zone = self.graph.end_hub
@@ -46,7 +84,7 @@ class Simulator:
         if (drone.path
             and drone.path_index < len(drone.path)
             and drone.path[drone.path_index] == drone.current_zone
-            and drone.path_index < len(drone.path) - 1):
+                and drone.path_index < len(drone.path) - 1):
             return drone.path
 
         path = self.path_finder.find_path(
@@ -86,6 +124,28 @@ class Simulator:
                             is_restricted)
             plans.append(plan)
         return plans
+
+    def should_reroute(self, drone: Drone) -> bool:
+        return drone.wait_turns >= 1
+
+    def reroute_drone(
+        self,
+        drone: Drone,
+        forbidden_zones: Optional[Set[str]] = None,
+        forbidden_connection: Optional[Set[Tuple[str, str]]] = None
+    ) -> bool:
+
+        new_path = self.path_finder.find_path(
+            drone.current_zone,
+            self.graph.end_hub,
+            forbidden_zones=forbidden_zones,
+            forbidden_connections=forbidden_connection)
+        if not new_path or len(new_path) < 2:
+            return False
+        drone.path = new_path
+        drone.path_index = 0
+        drone.wait_turns = 0
+        return True
 
     def can_apply_plan(self,
                        plan: MovePlan,
@@ -141,13 +201,25 @@ class Simulator:
 
     def validate_and_apply_moves(self,
                                  plans: List[MovePlan]) -> List[MovePlan]:
+        start = self.graph.start_hub
+        plans.sort(key=lambda p: float('inf')
+                   if p.drone.current_zone == start
+                   else (len(p.drone.path) - p.drone.path_index))
         zone_usage: Dict[str, int] = {}
         connection_usage: Dict[Tuple[str, str], int] = {}
         successful_plans: List[MovePlan] = []
         for plan in plans:
             if self.can_apply_plan(plan, zone_usage, connection_usage):
                 self.apply_plan(plan, zone_usage, connection_usage)
+                plan.drone.wait_turns = 0
                 successful_plans.append(plan)
+            else:
+                plan.drone.wait_turns += 1
+                if self.should_reroute(plan.drone):
+                    self.reroute_drone(
+                        plan.drone,
+                        forbidden_zones={plan.to_zone.name},
+                        forbidden_connection={plan.connection.key})
         return successful_plans
 
     def generate_output_line(self, plans: List[MovePlan]) -> List[str]:
@@ -174,16 +246,21 @@ class Simulator:
         self.generate_output_line(successful_plans)
 
     def run(self, max_turns: int = 100) -> List[str]:
-        self.output_lines = []
-        self.current_turn = 0
+        try:
+            self.output_lines = []
+            self.current_turn = 0
 
-        while not self.all_delivered():
-            if self.current_turn >= max_turns:
-                raise RuntimeError(
-                    f"Exceeded maximum turns ({max_turns}) without "
-                    "delivering all drones"
-                )
-            self.execute_turn()
-            self.current_turn += 1
+            while not self.all_delivered():
+                if self.current_turn >= max_turns:
+                    raise RuntimeError(
+                        f"Exceeded maximum turns ({max_turns}) without "
+                        "delivering all drones"
+                    )
+                self.execute_turn()
+                self.current_turn += 1
 
-        return self.output_lines
+            return self.output_lines
+        except Exception as e:
+            print(f"Error during simulation: {e}")
+            print("No Path Found for some drones. Simulation terminated.")
+            return []
