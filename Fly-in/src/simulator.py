@@ -222,9 +222,9 @@ class Simulator:
                         forbidden_connection={plan.connection.key})
         return successful_plans
 
-    def generate_output_line(self, plans: List[MovePlan]) -> List[str]:
+    def generate_output_line(self, plans: List[MovePlan]) -> str:
         if not plans:
-            return []
+            return ""
         move_strs: List[str] = []
         for plan in plans:
             if plan.is_restricted:
@@ -234,18 +234,20 @@ class Simulator:
                 move_strs.append(
                     f"D{plan.drone.drone_id}-{plan.to_zone.name}")
 
-        self.output_lines.append(" ".join(move_strs))
-        return self.output_lines
+        line = " ".join(move_strs)
+        self.output_lines.append(line)
+        return line
 
-    def execute_turn(self) -> None:
+    def execute_turn(self) -> str:
         for conn in self.graph.connections:
             conn.reset_usage()
         self._progress_transit()
         move_plans = self.collect_move_intentions()
         successful_plans = self.validate_and_apply_moves(move_plans)
-        self.generate_output_line(successful_plans)
+        line = self.generate_output_line(successful_plans)
+        return line
 
-    def run(self, max_turns: int = 100) -> List[str]:
+    def run(self, max_turns: int = 100) -> None:
         try:
             self.output_lines = []
             self.current_turn = 0
@@ -259,8 +261,15 @@ class Simulator:
                 self.execute_turn()
                 self.current_turn += 1
 
-            return self.output_lines
+            # Print output lines and number of turns
+            print("#", "=" * 80)
+            for line in self.output_lines:
+                print(line)
+            print("#", "=" * 80)
+            print("#", "All drones delivered in",
+                  len(self.output_lines), "turns")
+            print("#", "=" * 80)
+
         except Exception as e:
             print(f"Error during simulation: {e}")
             print("No Path Found for some drones. Simulation terminated.")
-            return []

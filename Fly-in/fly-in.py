@@ -1,6 +1,7 @@
 from src.parser import Parser
 from src.graph import Graph
 from src.simulator import Simulator
+from src.renderer import Renderer
 import sys
 
 
@@ -16,11 +17,11 @@ def main() -> None:
 
     graph = Graph(**map_data)
     sim = Simulator(graph)
+    renderer = Renderer(graph, sim)
 
-    lines = sim.run()
-    for line in lines:
-        print(line)
-    print("Number of Turns", len(lines))
+    renderer.animate()
+    renderer.mainloop()
+    # sim.run()
 
 
 if __name__ == "__main__":
