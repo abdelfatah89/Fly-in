@@ -1,3 +1,4 @@
+"""Pathfinding module: Dijkstra's algorithm with forbidden zone support."""
 from typing import List, Optional, Dict, Set, Tuple
 from heapq import heappop, heappush
 from .graph import Graph
@@ -5,19 +6,48 @@ from .zone import Zone
 
 
 class PathFindingError(Exception):
+    """Raised when path reconstruction fails."""
+
     pass
 
 
 class Dijkstra:
+    """Dijkstra's shortest-path algorithm for the drone zone network.
+
+    Supports optional forbidden zones and connections to enable
+    dynamic rerouting without modifying the underlying graph.
+
+    Attributes:
+        graph: The Graph instance to search.
+    """
+
     def __init__(self, graph: Graph) -> None:
+        """Initialize the pathfinder with a graph.
+
+        Args:
+            graph: The zone network graph to search.
+        """
         self.graph = graph
 
     def find_path(self,
                   start: Zone,
                   goal: Zone,
                   forbidden_zones: Optional[Set[str]] = None,
-                  forbidden_connections: Optional[Set[Tuple[str, str]]] = None
+                  forbidden_connections:
+                      Optional[Set[Tuple[str, str]]] = None
                   ) -> List[Zone]:
+        """Find the shortest path from start to goal using Dijkstra.
+
+        Args:
+            start: The starting zone.
+            goal: The destination zone.
+            forbidden_zones: Set of zone names to exclude from search.
+            forbidden_connections: Set of connection keys to exclude.
+
+        Returns:
+            Ordered list of Zone objects from start to goal,
+            or empty list if no path exists.
+        """
         if start.name == goal.name:
             return [start]
 
@@ -28,7 +58,8 @@ class Dijkstra:
         visited: Set[str] = set()
 
         while priority_queue:
-            current_dist, _, current_zone_name = heappop(priority_queue)
+            current_dist, _, current_zone_name = heappop(
+                priority_queue)
             if current_dist > shortest_dist[current_zone_name]:
                 continue
             if current_zone_name in visited:
@@ -45,22 +76,27 @@ class Dijkstra:
                     continue
                 if neighbor_zone.is_blocked:
                     continue
-                if forbidden_zones and neighbor_zone.name in forbidden_zones:
+                if (forbidden_zones
+                        and neighbor_zone.name in forbidden_zones):
                     continue
                 if (forbidden_connections
                         and _connection.key in forbidden_connections):
                     continue
 
-                neighbor_dist = self.graph.get_zone_cost(neighbor_zone)
+                neighbor_dist = self.graph.get_zone_cost(
+                    neighbor_zone)
                 to_neighbor_dist = current_dist + neighbor_dist
                 neighbor_name = neighbor_zone.name
                 if (neighbor_name not in shortest_dist
-                   or to_neighbor_dist < shortest_dist[neighbor_name]):
-                    shortest_dist[neighbor_zone.name] = to_neighbor_dist
+                   or to_neighbor_dist
+                        < shortest_dist[neighbor_name]):
+                    shortest_dist[neighbor_zone.name] = (
+                        to_neighbor_dist)
                     way_back[neighbor_name] = current_zone.name
                     counter += 1
-                    heappush(priority_queue, (to_neighbor_dist,
-                                              counter, neighbor_zone.name))
+                    heappush(priority_queue, (
+                        to_neighbor_dist,
+                        counter, neighbor_zone.name))
         return []
 
     def get_path(self,
@@ -68,6 +104,19 @@ class Dijkstra:
                  goal: Zone,
                  way_back: Dict[str, Optional[str]]
                  ) -> List[Zone]:
+        """Reconstruct the path from start to goal using the parent map.
+
+        Args:
+            start: The starting zone.
+            goal: The destination zone.
+            way_back: Dictionary mapping each zone name to its predecessor.
+
+        Returns:
+            Ordered list of Zone objects from start to goal.
+
+        Raises:
+            PathFindingError: If the reconstructed path is invalid.
+        """
         path_names: List[str] = []
         current_name: Optional[str] = goal.name
 
