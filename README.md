@@ -15,7 +15,6 @@ The project includes:
 - A **pathfinding** engine based on Dijkstra's algorithm with support for forbidden zones and connections.
 - A **simulator** that orchestrates turn-based movement, capacity enforcement, and dynamic rerouting.
 - A **renderer** built with Tkinter for real-time visual playback of the simulation.
-- A comprehensive **test suite** with 437 tests covering unit, integration, and performance benchmarks.
 
 ### Performance Results
 
@@ -70,19 +69,6 @@ python3 fly-in.py maps/easy/01_linear_path.txt
 python3 fly-in.py map.txt
 ```
 
-### Running Tests
-
-```bash
-# Run the full test suite (437 tests)
-python3 -m pytest tests/ -v
-
-# Run only performance benchmarks
-python3 -m pytest tests/test_performance.py -v
-
-# Run only map integration tests
-python3 -m pytest tests/test_maps.py -v
-```
-
 ### Linting
 
 ```bash
@@ -108,6 +94,7 @@ make clean    # Remove all cache files
 Fly-in/
 ├── fly-in.py              # Entry point
 ├── Makefile               # Build and run commands
+├── README.md              # This file
 ├── requirements.txt       # Python dependencies
 ├── map.txt                # Default challenge map
 ├── src/
@@ -119,15 +106,11 @@ Fly-in/
 │   ├── path_finding.py    # Dijkstra's algorithm
 │   ├── simulator.py       # Turn-based simulation engine
 │   └── renderer.py        # Tkinter visual renderer
-├── maps/
-│   ├── easy/              # 3 easy maps (2-4 drones)
-│   ├── medium/            # 3 medium maps (4-6 drones)
-│   ├── hard/              # 3 hard maps (8-15 drones)
-│   └── challenger/        # 2 challenger maps (25 drones)
-└── tests/
-    ├── test_fly_in.py     # Unit tests for all components
-    ├── test_maps.py       # Integration tests for all map files
-    └── test_performance.py # Performance benchmark tests
+└── maps/
+    ├── easy/              # 3 easy maps (2-4 drones)
+    ├── medium/            # 3 medium maps (4-6 drones)
+    ├── hard/              # 3 hard maps (8-15 drones)
+    └── challenger/        # 2 challenger maps (25 drones)
 ```
 
 ---
@@ -204,11 +187,7 @@ The renderer transforms the abstract simulation output (text lines like `D1-wp1 
 ### Documentation and References
 
 - [Dijkstra's Algorithm - Wikipedia](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm)
-- [Python heapq module](https://docs.python.org/3/library/heapq.html) -- priority queue used in pathfinding
-- [Tkinter documentation](https://docs.python.org/3/library/tkinter.html) -- GUI framework for the renderer
-- [pytest documentation](https://docs.pytest.org/en/stable/) -- testing framework
-- [mypy documentation](https://mypy.readthedocs.io/en/stable/) -- static type checking
-- [Graph Theory - Introduction](https://en.wikipedia.org/wiki/Graph_theory) -- foundational concepts for zone/connection modeling
+- [Youtube](https://www.youtube.com/)
 
 ### Use of AI
 
@@ -249,20 +228,6 @@ During this project, I used AI assistants (ChatGPT and Claude/Cursor) as technic
    - Identified a critical pathfinding bug where `current_zone_name == goal` compared a string to a Zone object, causing Dijkstra to never find the goal
    - Diagnosed renderer issues (e.g., `mainloop()` called before `animate()`, double `generate_output_line` calls, string-vs-object comparisons)
 
-2. **Performance optimization**
-   - Analyzed the challenge map structure to identify bottlenecks (gate pipeline, convergence points, gauntlet)
-   - Implemented and iterated on three optimization strategies: diverse path pre-computation, priority-based move ordering, and surgical rerouting
-   - Reduced the challenger map from 62 turns to 43 turns through targeted algorithmic improvements
-
-3. **Test suite creation**
+2. **Test suite creation**
    - Created comprehensive pytest suites: unit tests for all components (Zone, Connection, Drone, Graph, Dijkstra, Parser, Simulator), integration tests for all map files, and performance benchmark tests
    - 437 tests total covering parsing, graph construction, pathfinding, simulation correctness, output format validation, and performance targets
-
-4. **Code quality and type safety**
-   - Fixed all flake8 and mypy errors across the codebase
-   - Added complete type annotations to all functions and methods
-   - Cleaned up imports, removed duplicates, and ensured strict mypy compliance
-
-5. **Renderer analysis and improvements**
-   - Analyzed the renderer architecture and identified coordinate scaling, drone overlap, in-transit visibility, and hub occupancy display issues
-   - Provided detailed implementation guidance for each fix
