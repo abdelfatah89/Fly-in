@@ -2,7 +2,7 @@
 from typing import List, Optional, Dict, Set, Tuple
 from heapq import heappop, heappush
 from .graph import Graph
-from .zone import Zone
+from .zone import Zone, ZoneType
 
 
 class PathFindingError(Exception):
@@ -38,6 +38,11 @@ class Dijkstra:
                   ) -> List[Zone]:
         """Find the shortest path from start to goal using Dijkstra.
 
+        When two paths have equal cost, the path passing through more
+        priority zones is preferred.  Because priority zones have cost
+        0.0, each one exactly offsets one extra normal hop, and the
+        negative priority count in the queue breaks the tie.
+
         Args:
             start: The starting zone.
             goal: The destination zone.
@@ -52,15 +57,21 @@ class Dijkstra:
             return [start]
 
         counter = 0
-        priority_queue = [(0.0, counter, start.name)]
-        shortest_dist: Dict[str, float] = {start.name: 0.0}
+        # Queue entries: (cost, -priority_count, counter, zone_name)
+        priority_queue: List[Tuple[float, int, int, str]] = [
+            (0.0, 0, counter, start.name)]
+        # Best known (cost, -priority_count) per zone
+        best: Dict[str, Tuple[float, int]] = {
+            start.name: (0.0, 0)}
         way_back: Dict[str, Optional[str]] = {start.name: None}
         visited: Set[str] = set()
 
         while priority_queue:
-            current_dist, _, current_zone_name = heappop(
-                priority_queue)
-            if current_dist > shortest_dist[current_zone_name]:
+            current_dist, neg_prio, _, current_zone_name = (
+                heappop(priority_queue))
+            dist_key = (current_dist, neg_prio)
+            if dist_key > best.get(
+                    current_zone_name, (float('inf'), 0)):
                 continue
             if current_zone_name in visited:
                 continue
@@ -80,23 +91,27 @@ class Dijkstra:
                         and neighbor_zone.name in forbidden_zones):
                     continue
                 if (forbidden_connections
-                        and _connection.key in forbidden_connections):
+                        and _connection.key
+                        in forbidden_connections):
                     continue
 
-                neighbor_dist = self.graph.get_zone_cost(
+                neighbor_cost = self.graph.get_zone_cost(
                     neighbor_zone)
-                to_neighbor_dist = current_dist + neighbor_dist
+                to_neighbor_dist = current_dist + neighbor_cost
+                new_neg_prio = neg_prio + (
+                    -1 if neighbor_zone.zone_type
+                    == ZoneType.PRIORITY else 0)
+                neighbor_key = (to_neighbor_dist, new_neg_prio)
                 neighbor_name = neighbor_zone.name
-                if (neighbor_name not in shortest_dist
-                   or to_neighbor_dist
-                        < shortest_dist[neighbor_name]):
-                    shortest_dist[neighbor_zone.name] = (
-                        to_neighbor_dist)
+
+                if neighbor_key < best.get(
+                        neighbor_name, (float('inf'), 0)):
+                    best[neighbor_name] = neighbor_key
                     way_back[neighbor_name] = current_zone.name
                     counter += 1
                     heappush(priority_queue, (
-                        to_neighbor_dist,
-                        counter, neighbor_zone.name))
+                        to_neighbor_dist, new_neg_prio,
+                        counter, neighbor_name))
         return []
 
     def get_path(self,

@@ -48,17 +48,22 @@ class Graph:
     def get_zone_cost(self, zone: Zone) -> float:
         """Return the pathfinding cost for entering a zone.
 
+        Priority zones cost 0.0 so that traversing one fully offsets
+        the cost of an additional normal hop.  The Dijkstra tiebreaker
+        (priority-zone count) then ensures the priority route wins when
+        total costs are equal.
+
         Args:
             zone: The target zone.
 
         Returns:
-            Cost value: 0.5 for priority, 1.0 for normal,
+            Cost value: 0.0 for priority, 1.0 for normal,
             2.0 for restricted, infinity for blocked.
         """
         if zone.zone_type == ZoneType.RESTRICTED:
             return 2.0
         elif zone.zone_type == ZoneType.PRIORITY:
-            return 0.5
+            return 0.0
         elif zone.zone_type == ZoneType.BLOCKED:
             return float('inf')
         else:
