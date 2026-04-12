@@ -48,10 +48,10 @@ class Graph:
     def get_zone_cost(self, zone: Zone) -> float:
         """Return the pathfinding cost for entering a zone.
 
-        Priority zones cost 0.0 so that traversing one fully offsets
-        the cost of an additional normal hop.  The Dijkstra tiebreaker
-        (priority-zone count) then ensures the priority route wins when
-        total costs are equal.
+        Priority zones cost 0.0 so Dijkstra treats them as free hops.
+        Combined with priority-aware tiebreaking in the pathfinder,
+        this makes Dijkstra actively route through priority neighbors
+        even if the path has one extra hop.
 
         Args:
             zone: The target zone.
