@@ -1,6 +1,7 @@
 [flake8]
 exclude =
     trash,
+    tests,
     .git,
     __pycache__,
     .mypy_cache,

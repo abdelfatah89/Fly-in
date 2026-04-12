@@ -121,7 +121,9 @@ class Simulator:
         """Assign precomputed diverse paths to drones in round-robin."""
         paths = self._compute_diverse_paths()
         if not paths:
-            return
+            print("No paths found for drones.")
+            exit(1)
+
         for i, drone in enumerate(self.graph.drones):
             drone.path = list(paths[i % len(paths)])
             drone.path_index = 0
