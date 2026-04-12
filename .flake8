@@ -1,0 +1,7 @@
+[flake8]
+exclude =
+    trash,
+    .git,
+    __pycache__,
+    .mypy_cache,
+    .fly_env

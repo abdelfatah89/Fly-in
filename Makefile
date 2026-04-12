@@ -16,8 +16,9 @@ lint:
 	--warn-unused-ignores \
 	--ignore-missing-imports \
 	--disallow-untyped-defs \
-	--check-untyped-defs
+	--check-untyped-defs \
+	--exclude trash
 
 lint-strict:
 	flake8 .
-	mypy . --strict
+	mypy . --strict --exclude trash
